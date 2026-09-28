@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPEIKITO ⚡ AutoCert Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        },
+                        dark: '#0f172a',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+        }
+        
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- HEADER / APP BAR -->
+    <header class="bg-dark text-white shadow-md z-20 flex-none">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-primary-500 to-blue-600 p-2 rounded-xl shadow-inner">
+                    <i data-lucide="zap" class="w-5 h-5 text-yellow-300 fill-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-tight tracking-tight">SPEIKITO</h1>
+                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">AutoCert Workspace</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="btn-session-manager" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border border-slate-700">
+                    <i data-lucide="folder-open" class="w-4 h-4 text-primary-500"></i>
+                    <span class="hidden sm:inline" id="header-session-name">Sin sesión</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 overflow-y-auto no-scrollbar relative" id="main-scroll-area">
+        <div class="max-w-4xl mx-auto pb-24 pt-4 px-4 h-full" id="app-container">
+            <!-- Vistas dinámicas se inyectarán aquí -->
+        </div>
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="glass-nav fixed bottom-0 w-full z-30 pb-safe sm:pb-0 flex-none block sm:hidden">
+        <div class="flex justify-around items-center h-16 px-2">
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary-600 active-nav transition-colors" data-view="dashboard">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium">Inicio</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary-600 transition-colors relative" data-view="tests">
+                <i data-lucide="list-checks" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium">Pruebas</span>
+                <span id="badge-pending" class="absolute top-1 right-3 bg-primary-500 text-white text-[9px] font-bold px-1.5 rounded-full hidden"></span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary-600 transition-colors" data-view="payments">
+                <i data-lucide="credit-card" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium">Pagos</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary-600 transition-colors relative" data-view="incidents">
+                <i data-lucide="alert-triangle" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium">Alertas</span>
+                <span id="badge-incidents" class="absolute top-1 right-3 bg-red-500 text-white text-[9px] font-bold px-1.5 rounded-full hidden"></span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary-600 transition-colors" data-view="report">
+                <i data-lucide="file-text" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium">Reporte</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- DESKTOP NAVIGATION (Floating Sidebar) -->
+    <aside class="hidden sm:flex flex-col fixed left-4 top-24 bottom-8 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 z-10 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Menú Principal</h2>
+        </div>
+        <nav class="flex-1 p-2 space-y-1">
+            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-primary-600 transition-all active-nav-desktop" data-view="dashboard">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </button>
+            <button class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-primary-600 transition-all" data-view="tests">
+                <div class="flex items-center gap-3"><i data-lucide="list-checks" class="w-5 h-5"></i> Ejecución</div>
+                <span id="badge-pending-desktop" class="bg-slate-200 text-slate-600 text-xs py-0.5 px-2 rounded-full hidden"></span>
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-primary-600 transition-all" data-view="payments">
+                <i data-lucide="credit-card" class="w-5 h-5"></i> Matriz de Pagos
+            </button>
+            <button class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-primary-600 transition-all" data-view="incidents">
+                <div class="flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Incidencias</div>
+                <span id="badge-incidents-desktop" class="bg-red-100 text-red-600 text-xs py-0.5 px-2 rounded-full hidden"></span>
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-primary-600 transition-all" data-view="report">
+                <i data-lucide="file-text" class="w-5 h-5"></i> Reporte & Bitácora
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-100 bg-slate-50">
+            <button class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 transition-colors" onclick="SPEIKITO.exportData()">
+                <i data-lucide="download" class="w-4 h-4"></i> Respaldar App
+            </button>
+        </div>
+    </aside>
+
+    <!-- MODALS CONTAINER -->
+    <div id="modals-container"></div>
+
+    <!-- MAIN LOGIC -->
+    <script>
+        // --- CONSTANTS & DEFAULT DATA ---
+        const DEFAULT_POA_SPID = [
+            { id: 1, phase: 'Fondeo', actor: 'Banco de México', time: '15:00 - 15:30', activity: 'Fondeo de los Participantes en su cuenta en Dólares en el SIAC Beta.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 2, phase: 'Fondeo', actor: 'Participantes', time: '15:30 - 16:00', activity: 'Fondeo de su cuenta en el SPID Beta.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 3, phase: 'Conexión al SPID Beta', actor: 'Participantes', time: '16:01 - 16:45', activity: 'Conexión al SPID Beta mediante su cliente.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 4, phase: 'Envío de órdenes de pago', actor: 'Participantes', time: '16:01 - 16:45', activity: 'Envío de órdenes de pago a los Participantes.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 5, phase: 'Cambio de día', actor: 'Banco de México', time: '17:15', activity: 'Cambio de día en SPID Beta para iniciar operación con el día t.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 6, phase: 'Inicio de la prueba', actor: 'Banco de México', time: '10:00', activity: 'Notificación sobre el inicio de la prueba.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 7, phase: 'Conexión al SPID Beta', actor: 'Participantes', time: '10:00 - 10:15', activity: 'Conexión al SPID Beta mediante su cliente.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 8, phase: 'Envío de órdenes de pago', actor: 'Participantes', time: '10:15 - 10:40', activity: 'Envío de órdenes de pago a los Participantes.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 9, phase: 'Simulación de la caída', actor: 'Banco de México', time: '10:40', activity: 'Notificación sobre la interrupción del servicio SPID Beta.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 10, phase: 'Simulación de la caída', actor: 'Participantes', time: '10:40 - 10:50', activity: 'Desconexión de los clientes SPID Beta.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 11, phase: 'Abono de saldos', actor: 'Banco de México', time: '10:40 - 11:00', activity: 'Abono de los saldos del SPID Beta hasta antes de la interrupción en las cuentas en Dólares en SIAC Beta.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 12, phase: 'Abono de saldos', actor: 'Banco de México', time: '11:00', activity: 'Notificación del abono de saldos.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 13, phase: 'Activación POA-SPID', actor: 'Banco de México', time: '11:02', activity: 'Notificación sobre activación del POA-SPID.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 14, phase: 'Activación POA-SPID', actor: 'Participantes', time: '11:02 - 11:20', activity: 'Instrucción de traspasos SIAC al POA-SPID.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 15, phase: 'Activación POA-SPID', actor: 'Participantes', time: '11:02 - 11:20', activity: 'Generación de archivos de entrada.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 16, phase: 'Activación POA-SPID', actor: 'Participantes', time: '11:02 - 11:20', activity: 'Autenticación en el MRA-SPID.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 17, phase: '1er ciclo POA-SPID', actor: 'Banco de México', time: '11:20', activity: 'Notificación inicio 1er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 18, phase: '1er ciclo POA-SPID', actor: 'Participantes', time: '11:20 - 11:40', activity: 'Depósito de archivos en MRA-SPID (1er ciclo).', status: null, duration: null, startTime: null, endTime: null },
+            { id: 19, phase: '1er ciclo POA-SPID', actor: 'Banco de México', time: '11:40', activity: 'Notificación inicio compensación 1er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 20, phase: '1er ciclo POA-SPID', actor: 'Banco de México', time: '11:40 - 12:00', activity: 'Compensación y liquidación 1er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 21, phase: '1er ciclo POA-SPID', actor: 'Banco de México', time: '12:00', activity: 'Entrega de resultados 1er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 22, phase: '1er ciclo POA-SPID', actor: 'Participantes', time: '12:00 - Cierre', activity: 'Descarga de archivo de salida 1er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 23, phase: '2do ciclo POA-SPID', actor: 'Banco de México', time: '12:05', activity: 'Notificación inicio 2do ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 24, phase: '2do ciclo POA-SPID', actor: 'Participantes', time: '12:05 - 12:25', activity: 'Depósito de archivos en MRA-SPID (2do ciclo).', status: null, duration: null, startTime: null, endTime: null },
+            { id: 25, phase: '2do ciclo POA-SPID', actor: 'Banco de México', time: '12:25 - 12:45', activity: 'Compensación y liquidación 2do ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 26, phase: '2do ciclo POA-SPID', actor: 'Banco de México', time: '12:45', activity: 'Entrega de resultados 2do ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 27, phase: '3er ciclo POA-SPID', actor: 'Banco de México', time: '12:50', activity: 'Notificación inicio 3er ciclo (devoluciones).', status: null, duration: null, startTime: null, endTime: null },
+            { id: 28, phase: '3er ciclo POA-SPID', actor: 'Participantes', time: '12:50 - 13:10', activity: 'Depósito de archivos en MRA-SPID (3er ciclo).', status: null, duration: null, startTime: null, endTime: null },
+            { id: 29, phase: '3er ciclo POA-SPID', actor: 'Banco de México', time: '13:10 - 13:30', activity: 'Compensación y liquidación 3er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 30, phase: '3er ciclo POA-SPID', actor: 'Banco de México', time: '13:30', activity: 'Entrega de resultados 3er ciclo.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 31, phase: 'Liquidación final', actor: 'Banco de México', time: '13:30 - 13:45', activity: 'Traslado de saldos a SIAC Beta.', status: null, duration: null, startTime: null, endTime: null },
+            { id: 32, phase: 'Fin de operaciones', actor: 'Banco de México', time: '13:45', activity: 'Fin de operaciones POA-SPID.', status: null, duration: null, startTime: null, endTime: null }
+        ];
+
+        // --- GLOBAL STATE ---
+        const SPEIKITO = {
+            sessions: [], // All saved sessions
+            currentSessionId: null, // ID of active session
+            currentView: 'session_manager', // session_manager, dashboard, tests, payments, incidents, report, test_runner
+            activeTestId: null, // ID of test being executed
+            timerInterval: null,
+
+            // Core init
+            init() {
+                this.loadFromStorage();
+                lucide.createIcons();
+                this.setupEventListeners();
+                
+                if (this.sessions.length === 0) {
+                    this.renderSessionManager();
+                } else if (!this.currentSessionId) {
+                    this.renderSessionManager();
+                } else {
+                    this.renderView('dashboard');
+                }
+            },
+
+            // --- STORAGE ---
+            loadFromStorage() {
+                const stored = localStorage.getItem('speikito_data');
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        this.sessions = parsed.sessions || [];
+                        this.currentSessionId = parsed.currentSessionId;
+                    } catch (e) {
+                        console.error("Error loading data", e);
+                    }
+                }
+            },
+            saveToStorage() {
+                localStorage.setItem('speikito_data', JSON.stringify({
+                    sessions: this.sessions,
+                    currentSessionId: this.currentSessionId
+                }));
+                this.updateBadges();
+            },
+            exportData() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({sessions: this.sessions}));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `speikito_backup_${new Date().getTime()}.json`);
+                dlAnchorElem.click();
+            },
+
+            // --- HELPERS ---
+            getSession() {
+                return this.sessions.find(s => s.id === this.currentSessionId);
+            },
+            logEvent(type, description, refId = null) {
+                const session = this.getSession();
+                if (!session) return;
+                session.logs.push({
+                    id: Date.now().toString(),
+                    date: new Date().toISOString(),
+                    type,
+                    description,
+                    refId
+                });
+                this.saveToStorage();
+            },
+            formatDate(isoString) {
+                if (!isoString) return '--';
+                const d = new Date(isoString);
+                return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            },
+            formatTime(isoString) {
+                if (!isoString) return '--:--';
+                const d = new Date(isoString);
+                return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            },
+            formatDuration(seconds) {
+                if(seconds === null || isNaN(seconds)) return '--';
+                const m = Math.floor(seconds / 60);
+                const s = Math.floor(seconds % 60);
+                return `${m}m ${s}s`;
+            },
+            getNextPendingTest() {
+                const session = this.getSession();
+                if (!session) return null;
+                return session.tests.find(t => t.status === null || t.status === 'in_progress');
+            },
+
+            // --- WHATSAPP & CSV LOGIC ---
+            sendToWhatsApp(testId) {
+                const session = this.getSession();
+                if (!session) return;
+                const test = session.tests.find(t => t.id === testId);
+                if (!test || !test.status) return alert("Primero finaliza la prueba.");
+
+                // Buscar observaciones (ya sea de incidencias o de notas de evidencia)
+                let observation = "";
+                let escalated = false;
+                if (test.status === 'failed') {
+                    const incident = session.incidents.find(i => i.testId === testId);
+                    if (incident) {
+                        observation = incident.description;
+                        escalated = incident.escalated;
+                    }
+                } else {
+                    const note = session.evidences.find(e => e.testId === testId && e.type === 'nota');
+                    if (note) observation = note.value;
+                }
+
+                const timeToUse = test.endTime ? new Date(test.endTime) : new Date();
+                const dateStr = timeToUse.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const timeStr = timeToUse.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+                let msg = `🗓 Fecha: ${dateStr}\n`;
+                msg += `⏰ Hora: ${timeStr}\n\n`;
+                msg += `✅ Prueba:\n${session.name}\n\n`;
+
+                const phaseText = test.phase ? `[${test.phase}] ` : '';
+                const actorText = test.actor ? `(${test.actor}) ` : '';
+
+                msg += `🔢 ID ${test.id} ${phaseText}${actorText}\n👉 ${test.activity}\n\n`;
+
+                if (test.status === 'success') {
+                  msg += `📝 Observaciones:\n✅ Exitoso${observation.trim() ? `\n📌 Nota: ${observation}` : ''}\n\n`;
+                } else if (test.status === 'failed') {
+                  msg += `📝 Observaciones:\n❌ ${observation || 'Sin observaciones detalladas'}\n`;
+                  msg += `⚠️ Escalado: ${escalated ? 'Sí' : 'No'}\n\n`;
+                }
+
+                msg += `👤 Responsable: ${session.responsible}`;
+
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            },
+
+            downloadCSVTemplate() {
+                const headers = "Fase,Actor,Horario,Actividad\n";
+                const sample = "Fondeo,Banco de México,15:00 - 15:30,Fondeo de los Participantes en su cuenta en Dólares\n";
+                const blob = new Blob(["\uFEFF" + headers + sample], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "Plantilla_SPEIKITO.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    const lines = text.split('\n');
+                    const parsedTests = [];
+                    const session = this.getSession();
+                    let currentId = session.tests.length > 0 ? Math.max(...session.tests.map(t => t.id)) + 1 : 1;
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        // Parseo básico de CSV ignorando comas entre comillas
+                        const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+                        const parts = line.split(regex).map(val => val.replace(/^"|"$/g, '').trim());
+
+                        const activity = parts[3] || parts[0];
+                        if (!activity) continue;
+
+                        parsedTests.push({
+                            id: currentId++,
+                            phase: parts.length > 3 ? parts[0] : '',
+                            actor: parts.length > 3 ? parts[1] : '',
+                            time: parts.length > 3 ? parts[2] : '',
+                            activity: activity,
+                            status: null, duration: null, startTime: null, endTime: null
+                        });
+                    }
+
+                    if (parsedTests.length > 0) {
+                        const replace = confirm(`Se encontraron ${parsedTests.length} actividades.\n\n¿Deseas REEMPLAZAR el guion actual? (Si cancelas, se AGREGARÁN al final).`);
+                        if (replace) {
+                            session.tests = parsedTests;
+                        } else {
+                            session.tests = [...session.tests, ...parsedTests];
+                        }
+                        this.logEvent('CSV_LOADED', `Carga masiva de ${parsedTests.length} pruebas.`);
+                        this.saveToStorage();
+                        this.renderView('tests');
+                        alert("¡Pruebas cargadas correctamente!");
+                    } else {
+                        alert('No se encontraron actividades válidas en el archivo.');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = null; // Reset input
+            },
+
+            // --- VIEW ROUTING ---
+            renderView(view) {
+                this.currentView = view;
+                const container = document.getElementById('app-container');
+                container.innerHTML = '';
+                
+                // Update Desktop Layout Margin
+                if(view === 'session_manager') {
+                    document.getElementById('main-scroll-area').classList.remove('sm:ml-64');
+                    document.querySelector('aside').classList.add('hidden');
+                    document.querySelector('aside').classList.remove('sm:flex');
+                } else {
+                    document.getElementById('main-scroll-area').classList.add('sm:ml-64');
+                    document.querySelector('aside').classList.remove('hidden');
+                    document.querySelector('aside').classList.add('sm:flex');
+                }
+
+                // Update active nav state
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('text-primary-600', 'bg-slate-100');
+                    if(btn.dataset.view === view) {
+                        if(btn.classList.contains('active-nav-desktop')){
+                           btn.classList.add('text-primary-600', 'bg-slate-100');
+                        } else {
+                           btn.classList.add('text-primary-600');
+                        }
+                    }
+                });
+
+                const session = this.getSession();
+                if (session) {
+                    document.getElementById('header-session-name').textContent = session.name;
+                }
+
+                this.updateBadges();
+
+                switch(view) {
+                    case 'session_manager': this.renderSessionManager(); break;
+                    case 'dashboard': this.renderDashboard(); break;
+                    case 'tests': this.renderTests(); break;
+                    case 'test_runner': this.renderTestRunner(); break;
+                    case 'incidents': this.renderIncidents(); break;
+                    case 'payments': this.renderPayments(); break;
+                    case 'report': this.renderReport(); break;
+                }
+                lucide.createIcons();
+            },
+            
+            updateBadges() {
+                const session = this.getSession();
+                if(!session) return;
+                
+                const pending = session.tests.filter(t => !t.status).length;
+                const activeIncidents = session.incidents.filter(i => i.status !== 'Cerrada').length;
+
+                const bPending = document.getElementById('badge-pending');
+                const bPendingD = document.getElementById('badge-pending-desktop');
+                if(pending > 0) {
+                    bPending.textContent = pending; bPending.classList.remove('hidden');
+                    bPendingD.textContent = pending; bPendingD.classList.remove('hidden');
+                } else {
+                    bPending.classList.add('hidden'); bPendingD.classList.add('hidden');
+                }
+
+                const bInc = document.getElementById('badge-incidents');
+                const bIncD = document.getElementById('badge-incidents-desktop');
+                if(activeIncidents > 0) {
+                    bInc.textContent = activeIncidents; bInc.classList.remove('hidden');
+                    bIncD.textContent = activeIncidents; bIncD.classList.remove('hidden');
+                } else {
+                    bInc.classList.add('hidden'); bIncD.classList.add('hidden');
+                }
+            },
+
+            setupEventListeners() {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const view = e.currentTarget.dataset.view;
+                        if(view && this.getSession()) this.renderView(view);
+                    });
+                });
+                document.getElementById('btn-session-manager').addEventListener('click', () => {
+                    this.renderView('session_manager');
+                });
+            },
+
+            // --- VIEW: SESSION MANAGER ---
+            renderSessionManager() {
+                const container = document.getElementById('app-container');
+                let html = `
+                    <div class="fade-in max-w-2xl mx-auto mt-10">
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4">
+                                <i data-lucide="folder-kanban" class="w-8 h-8 text-primary-600"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800">Gestor de Sesiones</h2>
+                            <p class="text-slate-500 mt-2">Selecciona o crea una nueva certificación.</p>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                            <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="font-semibold text-slate-700">Tus Sesiones</h3>
+                                <button onclick="SPEIKITO.showCreateSessionModal()" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Nueva Sesión
+                                </button>
+                            </div>
+                            <ul class="divide-y divide-slate-100">
+                `;
+
+                if (this.sessions.length === 0) {
+                    html += `
+                        <li class="p-8 text-center text-slate-500">
+                            <p>No hay sesiones guardadas.</p>
+                            <p class="text-sm mt-1">Crea una para comenzar a registrar pruebas.</p>
+                        </li>
+                    `;
+                } else {
+                    this.sessions.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach(s => {
+                        const total = s.tests.length;
+                        const success = s.tests.filter(t => t.status === 'success').length;
+                        const progress = total > 0 ? Math.round((success / total) * 100) : 0;
+                        const isActive = this.currentSessionId === s.id;
+
+                        html += `
+                            <li class="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div class="flex-1 cursor-pointer" onclick="SPEIKITO.openSession('${s.id}')">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h4 class="font-bold text-slate-800 text-lg">${s.name}</h4>
+                                        ${isActive ? '<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Activa</span>' : ''}
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-medium">
+                                        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> ${this.formatDate(s.createdAt)}</span>
+                                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${s.responsible}</span>
+                                    </div>
+                                    <div class="mt-3 flex items-center gap-2">
+                                        <div class="w-full bg-slate-200 rounded-full h-1.5 max-w-[200px]">
+                                            <div class="bg-primary-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                                        </div>
+                                        <span class="text-xs font-bold text-slate-600">${progress}%</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="SPEIKITO.openSession('${s.id}')" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Abrir">
+                                        <i data-lucide="arrow-right-circle" class="w-6 h-6"></i>
+                                    </button>
+                                    <button onclick="SPEIKITO.deleteSession('${s.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </li>
+                        `;
+                    });
+                }
+
+                html += `</ul></div></div>`;
+                container.innerHTML = html;
+            },
+
+            showCreateSessionModal() {
+                const modalHtml = `
+                    <div id="modal-create" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                            <div class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-800 text-lg">Nueva Certificación</h3>
+                                <button onclick="document.getElementById('modal-create').remove()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre del Proyecto / Certificación</label>
+                                    <input type="text" id="new-sess-name" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" value="Certificación POA-SPID">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Responsable(s)</label>
+                                    <input type="text" id="new-sess-resp" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" value="Operación Pagos">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Plantilla de Pruebas</label>
+                                    <select id="new-sess-template" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none">
+                                        <option value="poa_spid">POA-SPID (32 Actividades)</option>
+                                        <option value="empty">En blanco</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                                <button onclick="document.getElementById('modal-create').remove()" class="px-4 py-2 text-slate-600 font-semibold hover:bg-slate-200 rounded-lg">Cancelar</button>
+                                <button onclick="SPEIKITO.createSession()" class="px-4 py-2 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 shadow-sm">Crear e Iniciar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modals-container').innerHTML = modalHtml;
+                lucide.createIcons();
+            },
+
+            createSession() {
+                const name = document.getElementById('new-sess-name').value.trim();
+                const resp = document.getElementById('new-sess-resp').value.trim();
+                const template = document.getElementById('new-sess-template').value;
+
+                if(!name) return alert("Ingresa un nombre");
+
+                const newSession = {
+                    id: 'sess_' + Date.now(),
+                    name,
+                    responsible: resp,
+                    createdAt: new Date().toISOString(),
+                    status: 'active', // active, completed
+                    tests: template === 'poa_spid' ? JSON.parse(JSON.stringify(DEFAULT_POA_SPID)) : [],
+                    incidents: [],
+                    evidences: [],
+                    payments: [],
+                    logs: []
+                };
+
+                this.sessions.push(newSession);
+                this.currentSessionId = newSession.id;
+                this.saveToStorage();
+                this.logEvent('SESSION_CREATED', 'Sesión creada y activada.');
+                
+                document.getElementById('modal-create').remove();
+                this.renderView('dashboard');
+            },
+
+            openSession(id) {
+                this.currentSessionId = id;
+                this.saveToStorage();
+                this.logEvent('SESSION_OPENED', 'Sesión abierta.');
+                this.renderView('dashboard');
+            },
+
+            deleteSession(id) {
+                if(confirm("¿Eliminar esta sesión y todos sus datos? Esta acción no se puede deshacer.")) {
+                    this.sessions = this.sessions.filter(s => s.id !== id);
+                    if(this.currentSessionId === id) this.currentSessionId = null;
+                    this.saveToStorage();
+                    this.renderSessionManager();
+                }
+            },
+
+            // --- VIEW: DASHBOARD ---
+            renderDashboard() {
+                const session = this.getSession();
+                if(!session) return this.renderSessionManager();
+
+                const total = session.tests.length;
+                const success = session.tests.filter(t => t.status === 'success').length;
+                const failed = session.tests.filter(t => t.status === 'failed').length;
+                const pending = total - success - failed;
+                const progress = total > 0 ? Math.round((success / total) * 100) : 0;
+
+                const incTotal = session.incidents.length;
+                const incOpen = session.incidents.filter(i => i.status !== 'Cerrada').length;
+                
+                const amtSent = session.payments.filter(p=>p.type==='Enviado').reduce((acc, c)=>acc+Number(c.amount),0);
+                const amtRec = session.payments.filter(p=>p.type==='Recibido').reduce((acc, c)=>acc+Number(c.amount),0);
+
+                const nextTest = this.getNextPendingTest();
+
+                const container = document.getElementById('app-container');
+                container.innerHTML = `
+                    <div class="fade-in space-y-6">
+                        <!-- HEADER STATS -->
+                        <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 opacity-10">
+                                <i data-lucide="zap" class="w-48 h-48"></i>
+                            </div>
+                            <div class="relative z-10">
+                                <span class="bg-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest backdrop-blur-sm border border-white/20 mb-4 inline-block">Vista General</span>
+                                <h2 class="text-3xl font-bold mb-1 leading-tight">${session.name}</h2>
+                                <p class="text-slate-300 text-sm font-medium mb-6 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i> ${session.responsible}</p>
+                                
+                                <div class="mb-2 flex justify-between text-sm font-semibold">
+                                    <span>Avance General</span>
+                                    <span>${progress}%</span>
+                                </div>
+                                <div class="w-full bg-slate-700/50 rounded-full h-3 backdrop-blur-sm border border-slate-600/50">
+                                    <div class="bg-gradient-to-r from-primary-400 to-primary-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)] transition-all duration-1000" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ASSISTANT CARD -->
+                        ${nextTest ? `
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-primary-100 border-l-4 border-l-primary-500">
+                            <div class="flex items-center gap-2 text-primary-600 mb-2">
+                                <i data-lucide="bot" class="w-5 h-5"></i>
+                                <span class="text-xs font-bold uppercase tracking-wider">Asistente · Siguiente Actividad</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 leading-tight mb-2">${nextTest.activity}</h3>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium border border-slate-200">ID: ${nextTest.id}</span>
+                                ${nextTest.phase ? `<span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded font-medium border border-purple-100">${nextTest.phase}</span>` : ''}
+                                ${nextTest.time ? `<span class="bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded font-medium border border-orange-100"><i data-lucide="clock" class="w-3 h-3 inline"></i> ${nextTest.time}</span>` : ''}
+                            </div>
+                            <button onclick="SPEIKITO.startTestRunner(${nextTest.id})" class="w-full sm:w-auto bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md">
+                                <i data-lucide="play-circle" class="w-5 h-5"></i> Ir a la Actividad
+                            </button>
+                        </div>
+                        ` : `
+                        <div class="bg-green-50 rounded-3xl p-6 shadow-sm border border-green-200 text-center">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+                                <i data-lucide="check-circle-2" class="w-8 h-8 text-green-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-green-800 mb-1">¡Todas las pruebas finalizadas!</h3>
+                            <p class="text-green-600 text-sm font-medium">Puedes generar el reporte final.</p>
+                        </div>
+                        `}
+
+                        <!-- KPI GRID -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                <div class="text-slate-400 mb-1"><i data-lucide="list" class="w-5 h-5"></i></div>
+                                <div class="text-2xl font-black text-slate-700">${total}</div>
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Pruebas</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                <div class="text-green-500 mb-1"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
+                                <div class="text-2xl font-black text-slate-700">${success}</div>
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Exitosas</div>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 relative">
+                                <div class="text-red-500 mb-1"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                                <div class="text-2xl font-black text-slate-700">${incOpen}</div>
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Alertas Activas</div>
+                                ${incOpen > 0 ? '<div class="absolute top-4 right-4 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>' : ''}
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                <div class="text-orange-500 mb-1"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                                <div class="text-2xl font-black text-slate-700">${pending}</div>
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Pendientes</div>
+                            </div>
+                        </div>
+                        
+                        <!-- MINI FINANCE -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Monto Enviado</p>
+                                    <p class="text-lg font-black text-slate-800">$${amtSent.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
+                                    <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Monto Recibido</p>
+                                    <p class="text-lg font-black text-slate-800">$${amtRec.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                                    <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                `;
+            },
+
+            // --- VIEW: TEST RUNNER (LIVE MODE) ---
+            startTestRunner(testId) {
+                this.activeTestId = testId;
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === testId);
+                
+                this.renderView('test_runner');
+                
+                // Solo inicia el cronómetro visual si ya estaba en curso
+                if (test.status === 'in_progress') {
+                    this.startTimer();
+                }
+            },
+
+            startTestAction() {
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === this.activeTestId);
+                if(!test) return;
+
+                test.startTime = new Date().toISOString();
+                test.lastResumeTime = test.startTime;
+                test.accumulatedTime = 0;
+                test.status = 'in_progress';
+                
+                this.logEvent('TEST_STARTED', `Inició ejecución de prueba ID ${test.id}`, test.id);
+                this.saveToStorage();
+                
+                this.renderView('test_runner');
+                this.startTimer();
+            },
+
+            pauseTest() {
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === this.activeTestId);
+                if(!test || test.status !== 'in_progress') return;
+
+                clearInterval(this.timerInterval);
+                const now = new Date().getTime();
+                const start = new Date(test.lastResumeTime).getTime();
+                
+                test.accumulatedTime = (test.accumulatedTime || 0) + Math.floor((now - start) / 1000);
+                test.status = 'paused';
+                
+                this.logEvent('TEST_PAUSED', `Pausó ejecución de prueba ID ${test.id}`, test.id);
+                this.saveToStorage();
+                this.renderView('test_runner');
+            },
+
+            resumeTest() {
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === this.activeTestId);
+                if(!test || test.status !== 'paused') return;
+
+                test.lastResumeTime = new Date().toISOString();
+                test.status = 'in_progress';
+                
+                this.logEvent('TEST_RESUMED', `Reanudó ejecución de prueba ID ${test.id}`, test.id);
+                this.saveToStorage();
+                this.renderView('test_runner');
+                this.startTimer();
+            },
+
+            startTimer() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                const timerEl = document.getElementById('live-timer');
+                if(!timerEl) return;
+
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === this.activeTestId);
+                if(!test || test.status !== 'in_progress' || !test.lastResumeTime) return;
+
+                this.timerInterval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const start = new Date(test.lastResumeTime).getTime();
+                    const diff = Math.floor((now - start) / 1000);
+                    const total = (test.accumulatedTime || 0) + diff;
+                    
+                    if(document.getElementById('live-timer')) {
+                         document.getElementById('live-timer').textContent = this.formatDuration(total);
+                    } else {
+                        clearInterval(this.timerInterval);
+                    }
+                }, 1000);
+            },
+
+            finishTest(status) {
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === this.activeTestId);
+                if(!test) return;
+
+                clearInterval(this.timerInterval);
+                test.endTime = new Date().toISOString();
+                
+                // Calcular tiempo final si estaba corriendo
+                if (test.status === 'in_progress' && test.lastResumeTime) {
+                    const start = new Date(test.lastResumeTime).getTime();
+                    const end = new Date(test.endTime).getTime();
+                    test.accumulatedTime = (test.accumulatedTime || 0) + Math.floor((end - start) / 1000);
+                }
+                
+                test.duration = test.accumulatedTime || 0;
+                test.status = status;
+
+                if (status === 'success') {
+                    this.logEvent('TEST_SUCCESS', `Prueba ID ${test.id} completada exitosamente.`, test.id);
+                    this.saveToStorage();
+                    this.showEvidenceModal(test.id, true); // Opcional agregar nota
+                } else {
+                    // Si falla, abrimos el modal de incidencia obligatorio
+                    this.logEvent('TEST_FAILED', `Prueba ID ${test.id} fallida.`, test.id);
+                    this.saveToStorage();
+                    this.showIncidentModal(test.id);
+                }
+            },
+
+            renderTestRunner() {
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === this.activeTestId);
+                if(!test) return this.renderView('dashboard');
+
+                let initialDuration = '0m 0s';
+                if(test.endTime) {
+                    initialDuration = this.formatDuration(test.duration);
+                } else if (test.accumulatedTime !== undefined || test.lastResumeTime) {
+                    let total = test.accumulatedTime || 0;
+                    if (test.status === 'in_progress' && test.lastResumeTime) {
+                        const now = new Date().getTime();
+                        const start = new Date(test.lastResumeTime).getTime();
+                        total += Math.floor((now - start) / 1000);
+                    }
+                    initialDuration = this.formatDuration(total);
+                }
+
+                const container = document.getElementById('app-container');
+                container.innerHTML = `
+                    <div class="fade-in max-w-2xl mx-auto h-full flex flex-col">
+                        <div class="flex items-center justify-between mb-6">
+                            <button onclick="SPEIKITO.renderView('tests')" class="text-slate-500 hover:text-slate-800 flex items-center gap-1 font-medium">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+                            </button>
+                            <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold tracking-widest border border-primary-200">
+                                ID ${test.id}
+                            </span>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-6 flex-1">
+                            <div class="text-center mb-8">
+                                <div class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white rounded-xl mb-6 shadow-inner font-mono text-2xl tracking-wider min-w-[150px] relative">
+                                    <i data-lucide="timer" class="w-5 h-5 mr-2 text-slate-400"></i>
+                                    <span id="live-timer">${initialDuration}</span>
+                                    ${test.status === 'paused' ? '<span class="absolute -top-2 -right-2 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">PAUSADO</span>' : ''}
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-800 leading-tight mb-4">${test.activity}</h2>
+                                
+                                <div class="flex flex-wrap justify-center gap-2 text-xs font-medium">
+                                    ${test.phase ? `<span class="bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100"><i data-lucide="layers" class="w-3 h-3 inline"></i> ${test.phase}</span>` : ''}
+                                    ${test.actor ? `<span class="bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200"><i data-lucide="user" class="w-3 h-3 inline"></i> ${test.actor}</span>` : ''}
+                                    ${test.time ? `<span class="bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100"><i data-lucide="clock" class="w-3 h-3 inline"></i> Plan: ${test.time}</span>` : ''}
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8">
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Checklist Sugerido</h4>
+                                <ul class="space-y-2 text-sm text-slate-600 font-medium">
+                                    <li class="flex items-center gap-2"><input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-primary-600"> Verificar conectividad</li>
+                                    <li class="flex items-center gap-2"><input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-primary-600"> Preparar datos/archivos</li>
+                                    <li class="flex items-center gap-2"><input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-primary-600"> Monitorear respuesta</li>
+                                </ul>
+                            </div>
+
+                            ${!test.endTime ? `
+                                ${!test.status ? `
+                                    <div class="mt-auto">
+                                        <button onclick="SPEIKITO.startTestAction()" class="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="play" class="w-6 h-6"></i> INICIAR PRUEBA
+                                        </button>
+                                    </div>
+                                ` : test.status === 'in_progress' ? `
+                                    <div class="flex flex-col sm:flex-row gap-3 mt-auto">
+                                        <button onclick="SPEIKITO.pauseTest()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-sm sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="pause" class="w-6 h-6"></i> PAUSAR
+                                        </button>
+                                        <button onclick="SPEIKITO.finishTest('success')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold text-sm sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="check-circle" class="w-6 h-6"></i> EXITOSA
+                                        </button>
+                                        <button onclick="SPEIKITO.finishTest('failed')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-bold text-sm sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="x-circle" class="w-6 h-6"></i> FALLIDA
+                                        </button>
+                                    </div>
+                                ` : test.status === 'paused' ? `
+                                    <div class="flex flex-col sm:flex-row gap-3 mt-auto">
+                                        <button onclick="SPEIKITO.resumeTest()" class="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-4 rounded-xl font-bold text-sm sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="play" class="w-6 h-6"></i> CONTINUAR
+                                        </button>
+                                        <button onclick="SPEIKITO.finishTest('success')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold text-sm sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="check-circle" class="w-6 h-6"></i> EXITOSA
+                                        </button>
+                                        <button onclick="SPEIKITO.finishTest('failed')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-bold text-sm sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                            <i data-lucide="x-circle" class="w-6 h-6"></i> FALLIDA
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            ` : `
+                                <div class="text-center p-4 rounded-xl ${test.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}">
+                                    <p class="font-bold text-lg mb-1">Prueba Finalizada</p>
+                                    <p class="text-sm">Estado: ${test.status === 'success' ? 'Exitosa' : 'Fallida'}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                                         <button onclick="SPEIKITO.sendToWhatsApp(${test.id})" class="bg-[#25D366] text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2 hover:bg-[#1DA851] transition-colors">
+                                            <i data-lucide="send" class="w-4 h-4"></i> WhatsApp
+                                        </button>
+                                         <button onclick="SPEIKITO.showEvidenceModal(${test.id})" class="bg-white px-4 py-2 border rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2 hover:bg-slate-50 text-slate-700">
+                                            <i data-lucide="paperclip" class="w-4 h-4"></i> Evidencia
+                                        </button>
+                                        <button onclick="SPEIKITO.renderView('dashboard')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                                            Continuar
+                                        </button>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            },
+
+            // --- VIEW: TESTS LIST ---
+            renderTests() {
+                const session = this.getSession();
+                const container = document.getElementById('app-container');
+                let html = `
+                    <div class="fade-in space-y-4">
+                        <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200 sticky top-0 z-10">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Guion de Pruebas</h2>
+                                <p class="text-xs font-medium text-slate-500">${session.tests.length} actividades</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="SPEIKITO.downloadCSVTemplate()" class="p-2 text-slate-400 hover:text-primary-600 bg-slate-50 rounded-lg border border-slate-200" title="Descargar Plantilla CSV">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="document.getElementById('csv-upload').click()" class="p-2 text-primary-600 hover:text-white hover:bg-primary-600 bg-primary-50 rounded-lg border border-primary-200" title="Subir CSV">
+                                    <i data-lucide="upload" class="w-4 h-4"></i>
+                                </button>
+                                <input type="file" id="csv-upload" class="hidden" accept=".csv" onchange="SPEIKITO.handleFileUpload(event)">
+                            </div>
+                        </div>
+                `;
+
+                session.tests.forEach(test => {
+                    let borderClass = 'border-slate-200 hover:border-primary-300';
+                    let statusBadge = '';
+                    if (test.status === 'success') {
+                        borderClass = 'border-green-400 bg-green-50/30';
+                        statusBadge = `<span class="text-green-600 bg-green-100 p-1 rounded-full"><i data-lucide="check" class="w-4 h-4"></i></span>`;
+                    } else if (test.status === 'failed') {
+                        borderClass = 'border-red-400 bg-red-50/30';
+                        statusBadge = `<span class="text-red-600 bg-red-100 p-1 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></span>`;
+                    } else if (test.status === 'in_progress') {
+                        borderClass = 'border-primary-400 bg-primary-50/50 shadow-md';
+                        statusBadge = `<span class="text-primary-600 bg-primary-100 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse">EN CURSO</span>`;
+                    }
+
+                    const hasEvidences = session.evidences.some(e => e.testId === test.id);
+                    const incident = session.incidents.find(i => i.testId === test.id);
+
+                    html += `
+                        <div class="bg-white rounded-xl shadow-sm border ${borderClass} p-4 transition-all cursor-pointer" onclick="SPEIKITO.startTestRunner(${test.id})">
+                            <div class="flex justify-between items-start gap-4">
+                                <div class="flex-1">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">ID ${test.id}</span>
+                                        ${test.phase ? `<span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider">${test.phase}</span>` : ''}
+                                    </div>
+                                    <h3 class="font-bold text-slate-800 text-sm leading-tight mb-2">${test.activity}</h3>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        ${test.time ? `<span class="text-xs text-slate-500 font-medium flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${test.time}</span>` : ''}
+                                        ${hasEvidences ? `<span class="text-xs text-primary-600 font-medium flex items-center gap-1"><i data-lucide="paperclip" class="w-3 h-3"></i> Evidencia</span>` : ''}
+                                        ${incident ? `<span class="text-xs text-red-600 font-bold flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Incidencia</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="flex-none flex items-center gap-2 justify-center">
+                                    ${(test.status === 'success' || test.status === 'failed') ? 
+                                        `<button onclick="event.stopPropagation(); SPEIKITO.sendToWhatsApp(${test.id})" class="p-2 text-green-500 hover:bg-green-50 rounded-full transition-colors" title="Enviar por WhatsApp"><i data-lucide="send" class="w-5 h-5"></i></button>` 
+                                    : ''}
+                                    ${statusBadge || `<button class="p-2 text-slate-300 hover:text-primary-600 rounded-full hover:bg-primary-50"><i data-lucide="play" class="w-6 h-6"></i></button>`}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+                container.innerHTML = html;
+            },
+
+            // --- VIEW: INCIDENTS ---
+            renderIncidents() {
+                const session = this.getSession();
+                const container = document.getElementById('app-container');
+                
+                let html = `
+                    <div class="fade-in space-y-4">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 sticky top-0 z-10 flex justify-between items-center">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">Centro de Incidencias</h2>
+                                <p class="text-xs font-medium text-slate-500">${session.incidents.length} registradas</p>
+                            </div>
+                        </div>
+                `;
+
+                if(session.incidents.length === 0) {
+                    html += `
+                        <div class="text-center py-16 text-slate-400">
+                            <i data-lucide="shield-check" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                            <p class="font-medium text-lg text-slate-600">Todo en orden</p>
+                            <p class="text-sm">No se han registrado incidencias en esta sesión.</p>
+                        </div>
+                    `;
+                } else {
+                    [...session.incidents].reverse().forEach(inc => {
+                        const test = session.tests.find(t => t.id === inc.testId);
+                        
+                        let statusColor = inc.status === 'Abierta' ? 'bg-red-100 text-red-700' : 
+                                          inc.status === 'En seguimiento' ? 'bg-yellow-100 text-yellow-700' : 
+                                          'bg-green-100 text-green-700';
+                        
+                        html += `
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">INC-${inc.id}</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusColor}">${inc.status}</span>
+                                        ${inc.escalated ? '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[10px] font-bold"><i data-lucide="alert-circle" class="w-3 h-3 inline"></i> Escalada</span>' : ''}
+                                    </div>
+                                    <span class="text-xs text-slate-400">${this.formatDate(inc.date)} ${this.formatTime(inc.date)}</span>
+                                </div>
+                                
+                                <p class="font-bold text-slate-800 text-sm mb-2">${inc.description}</p>
+                                ${test ? `<p class="text-xs text-slate-500 bg-slate-50 p-2 rounded mb-3 border border-slate-100">Prueba ${test.id}: ${test.activity}</p>` : ''}
+                                
+                                <div class="flex justify-between items-center pt-3 border-t border-slate-100">
+                                    <span class="text-xs font-semibold text-slate-600"><span class="text-slate-400">Sev:</span> ${inc.severity}</span>
+                                    <select onchange="SPEIKITO.updateIncidentStatus('${inc.id}', this.value)" class="text-xs font-bold bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700">
+                                        <option value="Abierta" ${inc.status === 'Abierta' ? 'selected' : ''}>Abierta</option>
+                                        <option value="En seguimiento" ${inc.status === 'En seguimiento' ? 'selected' : ''}>En seguimiento</option>
+                                        <option value="Cerrada" ${inc.status === 'Cerrada' ? 'selected' : ''}>Cerrada</option>
+                                    </select>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `</div>`;
+                container.innerHTML = html;
+            },
+
+            // --- VIEW: PAYMENTS ---
+            renderPayments() {
+                const session = this.getSession();
+                const container = document.getElementById('app-container');
+                
+                let html = `
+                    <div class="fade-in space-y-4">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 sticky top-0 z-10">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h2 class="text-xl font-bold text-slate-800">Matriz de Pagos</h2>
+                                    <p class="text-xs font-medium text-slate-500">Control de flujos financieros</p>
+                                </div>
+                                <button onclick="SPEIKITO.showPaymentModal()" class="w-10 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors">
+                                    <i data-lucide="plus" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="flex gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <div class="flex-1">
+                                    <p class="text-[10px] uppercase font-bold text-slate-500 mb-1">Enviado</p>
+                                    <p class="text-sm font-bold text-orange-600">$${session.payments.filter(p=>p.type==='Enviado').reduce((acc, c)=>acc+Number(c.amount),0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                </div>
+                                <div class="w-px bg-slate-200"></div>
+                                <div class="flex-1">
+                                    <p class="text-[10px] uppercase font-bold text-slate-500 mb-1">Recibido</p>
+                                    <p class="text-sm font-bold text-blue-600">$${session.payments.filter(p=>p.type==='Recibido').reduce((acc, c)=>acc+Number(c.amount),0).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                </div>
+                            </div>
+                        </div>
+                `;
+
+                if(session.payments.length === 0) {
+                    html += `
+                        <div class="text-center py-16 text-slate-400">
+                            <i data-lucide="wallet" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                            <p class="font-medium text-lg text-slate-600">No hay pagos registrados</p>
+                        </div>
+                    `;
+                } else {
+                    html += `<div class="space-y-3">`;
+                    session.payments.forEach(pay => {
+                        html += `
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-none ${pay.type === 'Enviado' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}">
+                                    <i data-lucide="${pay.type === 'Enviado' ? 'arrow-up-right' : 'arrow-down-left'}" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-slate-800 text-sm truncate">${pay.description}</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs text-slate-500 font-medium">${pay.operations} Ops.</span>
+                                        ${pay.activityRef ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Ref: ID ${pay.activityRef}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="text-right flex-none">
+                                    <p class="font-bold text-slate-800">$${Number(pay.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider ${pay.status === 'Completado' ? 'text-green-500' : 'text-slate-400'}">${pay.status}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+                container.innerHTML = html;
+            },
+
+            // --- VIEW: REPORT & BITACORA ---
+            renderReport() {
+                const session = this.getSession();
+                const container = document.getElementById('app-container');
+                
+                const total = session.tests.length;
+                const success = session.tests.filter(t => t.status === 'success').length;
+                const failed = session.tests.filter(t => t.status === 'failed').length;
+                
+                let reportText = `====== REPORTE: ${session.name.toUpperCase()} ======\n`;
+                reportText += `Responsable: ${session.responsible}\n`;
+                reportText += `Fecha: ${this.formatDate(session.createdAt)}\n`;
+                reportText += `-------------------------------------------\n`;
+                reportText += `AVANCE GENERAL: ${total > 0 ? Math.round((success/total)*100) : 0}%\n`;
+                reportText += `Exitosas: ${success} | Fallidas: ${failed} | Pendientes: ${total - success - failed}\n`;
+                reportText += `-------------------------------------------\n`;
+                
+                if(failed > 0) {
+                    reportText += `\n* INCIDENCIAS REGISTRADAS:\n`;
+                    session.incidents.forEach(inc => {
+                        reportText += `- [${inc.status}] ID Prueba ${inc.testId}: ${inc.description}\n`;
+                    });
+                }
+
+                reportText += `\n* BITÁCORA DE EVENTOS:\n`;
+                [...session.logs].forEach(log => {
+                    reportText += `[${this.formatTime(log.date)}] ${log.description}\n`;
+                });
+
+                const html = `
+                    <div class="fade-in space-y-4 h-full flex flex-col">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center flex-none">
+                            <h2 class="text-xl font-bold text-slate-800">Reporte Final</h2>
+                            <button onclick="SPEIKITO.copyReport()" class="flex items-center gap-2 bg-primary-50 text-primary-600 hover:bg-primary-100 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-primary-200">
+                                <i data-lucide="copy" class="w-4 h-4"></i> Copiar
+                            </button>
+                        </div>
+
+                        <div class="bg-slate-900 rounded-2xl shadow-inner p-4 flex-1 overflow-y-auto relative">
+                            <pre id="report-content" class="text-green-400 font-mono text-[10px] sm:text-xs whitespace-pre-wrap leading-relaxed">${reportText}</pre>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+            },
+            copyReport() {
+                const text = document.getElementById('report-content').innerText;
+                
+                // Usamos un textarea temporal invisible para evitar restricciones del iFrame
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                
+                // Evitamos que la pantalla haga un salto (scroll) al crear el elemento
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        alert('Reporte copiado al portapapeles.');
+                    } else {
+                        alert('No se pudo copiar el reporte.');
+                    }
+                } catch (err) {
+                    console.error('Error al intentar copiar', err);
+                    alert('Error al copiar. Por favor selecciona el texto manualmente.');
+                }
+                
+                document.body.removeChild(textArea);
+            },
+
+            // --- MODALS (INCIDENTS, EVIDENCES, PAYMENTS) ---
+            showIncidentModal(testId) {
+                const session = this.getSession();
+                const test = session.tests.find(t => t.id === testId);
+                
+                const modalHtml = `
+                    <div id="modal-incident" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-red-100">
+                            <div class="bg-red-50 p-4 border-b border-red-100 flex items-center gap-3">
+                                <div class="bg-red-100 text-red-600 p-2 rounded-lg"><i data-lucide="alert-octagon" class="w-5 h-5"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-red-900 text-lg leading-tight">Registrar Incidencia</h3>
+                                    <p class="text-xs text-red-600 font-medium">Prueba fallida requiere documentación.</p>
+                                </div>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Descripción / Motivo <span class="text-red-500">*</span></label>
+                                    <textarea id="inc-desc" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 outline-none resize-none" placeholder="Ej: Timeout al intentar conectar al puerto 8080..."></textarea>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Severidad</label>
+                                        <select id="inc-sev" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white">
+                                            <option value="Alta">Alta</option>
+                                            <option value="Media" selected>Media</option>
+                                            <option value="Baja">Baja</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-end pb-2">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" id="inc-esc" class="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                            <span class="text-sm font-bold text-slate-700">Escalar</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                <button onclick="SPEIKITO.saveIncident(${testId})" class="w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-sm flex justify-center items-center gap-2">
+                                    <i data-lucide="save" class="w-4 h-4"></i> Guardar y Continuar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modals-container').innerHTML = modalHtml;
+                lucide.createIcons();
+            },
+            saveIncident(testId) {
+                const desc = document.getElementById('inc-desc').value.trim();
+                if(!desc) return alert("La descripción es obligatoria.");
+
+                const session = this.getSession();
+                const newInc = {
+                    id: Math.floor(Math.random() * 10000).toString(),
+                    testId,
+                    date: new Date().toISOString(),
+                    description: desc,
+                    severity: document.getElementById('inc-sev').value,
+                    escalated: document.getElementById('inc-esc').checked,
+                    status: 'Abierta'
+                };
+                session.incidents.push(newInc);
+                this.logEvent('INCIDENT_CREATED', `Incidencia reportada en prueba ${testId}: ${desc}`, newInc.id);
+                this.saveToStorage();
+                
+                document.getElementById('modal-incident').remove();
+                this.renderView('dashboard'); // Return to flow
+            },
+            updateIncidentStatus(incId, status) {
+                const session = this.getSession();
+                const inc = session.incidents.find(i => i.id === incId);
+                if(inc) {
+                    inc.status = status;
+                    this.logEvent('INCIDENT_UPDATED', `Incidencia ${incId} cambió a ${status}.`, incId);
+                    this.saveToStorage();
+                    this.renderIncidents();
+                }
+            },
+
+            showEvidenceModal(testId, fromSuccess = false) {
+                const session = this.getSession();
+                const evs = session.evidences.filter(e => e.testId === testId);
+                
+                let evListHtml = evs.map(e => `
+                    <div class="flex items-center justify-between bg-white p-2 rounded border border-slate-200 mb-2">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i data-lucide="${e.type === 'nota' ? 'file-text' : 'image'}" class="w-4 h-4 text-slate-400"></i>
+                            <span class="truncate max-w-[200px]">${e.value}</span>
+                        </div>
+                        <button onclick="SPEIKITO.deleteEvidence('${e.id}', ${testId})" class="text-red-400 hover:text-red-600"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                    </div>
+                `).join('');
+
+                const modalHtml = `
+                    <div id="modal-evidence" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                            <div class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="paperclip" class="w-5 h-5 text-primary-500"></i> Evidencias ID ${testId}</h3>
+                                ${!fromSuccess ? `<button onclick="document.getElementById('modal-evidence').remove()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>` : ''}
+                            </div>
+                            <div class="p-5">
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Agregar Nota / Referencia</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="ev-note" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Escribe una observación...">
+                                        <button onclick="SPEIKITO.addEvidence(${testId}, 'nota')" class="bg-slate-800 text-white px-3 rounded-lg"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Simular Archivo (Solo Nombre)</label>
+                                     <div class="flex gap-2">
+                                        <input type="text" id="ev-file" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm" placeholder="ej. captura_pantalla.png">
+                                        <button onclick="SPEIKITO.addEvidence(${testId}, 'archivo')" class="bg-slate-800 text-white px-3 rounded-lg"><i data-lucide="upload" class="w-4 h-4"></i></button>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1">* Por límites de memoria local, solo guardamos la referencia.</p>
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t border-slate-100">
+                                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-2">Registradas (${evs.length})</h4>
+                                    <div class="max-h-32 overflow-y-auto" id="ev-list-container">
+                                        ${evListHtml || '<p class="text-sm text-slate-400 italic">No hay evidencias</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                <button onclick="document.getElementById('modal-evidence').remove(); ${fromSuccess ? "SPEIKITO.renderView('dashboard')" : ""}" class="px-6 py-2 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 shadow-sm">
+                                    ${fromSuccess ? 'Continuar' : 'Cerrar'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const container = document.getElementById('modals-container');
+                container.innerHTML = modalHtml;
+                lucide.createIcons();
+            },
+            addEvidence(testId, type) {
+                const inputId = type === 'nota' ? 'ev-note' : 'ev-file';
+                const el = document.getElementById(inputId);
+                const val = el.value.trim();
+                if(!val) return;
+
+                const session = this.getSession();
+                session.evidences.push({
+                    id: 'ev_' + Date.now(),
+                    testId,
+                    type,
+                    value: val,
+                    date: new Date().toISOString()
+                });
+                
+                this.logEvent('EVIDENCE_ADDED', `Evidencia (${type}) agregada a prueba ${testId}.`, testId);
+                this.saveToStorage();
+                el.value = '';
+                
+                // Re-render modal to show new item
+                this.showEvidenceModal(testId, false); 
+            },
+            deleteEvidence(evId, testId) {
+                const session = this.getSession();
+                session.evidences = session.evidences.filter(e => e.id !== evId);
+                this.saveToStorage();
+                this.showEvidenceModal(testId, false);
+            },
+
+            showPaymentModal() {
+                 const modalHtml = `
+                    <div id="modal-payment" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                            <div class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-800">Registrar Pago</h3>
+                                <button onclick="document.getElementById('modal-payment').remove()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Concepto</label>
+                                    <input type="text" id="pay-desc" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none" placeholder="Ej. Fondeo inicial">
+                                </div>
+                                <div class="flex gap-3">
+                                     <div class="flex-1">
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo</label>
+                                        <select id="pay-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white">
+                                            <option value="Enviado">Enviado</option>
+                                            <option value="Recibido">Recibido</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Monto ($)</label>
+                                        <input type="number" id="pay-amt" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none" placeholder="0.00">
+                                    </div>
+                                </div>
+                                 <div class="flex gap-3">
+                                     <div class="flex-1">
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ops.</label>
+                                        <input type="number" id="pay-ops" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none" value="1">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">ID Ref (Opcional)</label>
+                                        <input type="text" id="pay-ref" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none" placeholder="Ej. 14">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                <button onclick="SPEIKITO.savePayment()" class="px-6 py-2 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 shadow-sm">
+                                    Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modals-container').innerHTML = modalHtml;
+                lucide.createIcons();
+            },
+            savePayment() {
+                const desc = document.getElementById('pay-desc').value.trim();
+                const amt = parseFloat(document.getElementById('pay-amt').value) || 0;
+                if(!desc) return alert("Concepto requerido");
+
+                const session = this.getSession();
+                session.payments.push({
+                    id: 'pay_' + Date.now(),
+                    description: desc,
+                    type: document.getElementById('pay-type').value,
+                    amount: amt,
+                    operations: parseInt(document.getElementById('pay-ops').value) || 1,
+                    activityRef: document.getElementById('pay-ref').value,
+                    status: 'Completado'
+                });
+
+                this.logEvent('PAYMENT_ADDED', `Pago registrado: ${desc} ($${amt})`);
+                this.saveToStorage();
+                document.getElementById('modal-payment').remove();
+                this.renderPayments();
+            }
+        };
+
+        // Initialize App on DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            SPEIKITO.init();
+        });
+
+    </script>
+</body>
+</html>

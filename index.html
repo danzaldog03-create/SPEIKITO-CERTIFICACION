@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- HTML2PDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -1189,51 +1191,134 @@
                 const total = session.tests.length;
                 const success = session.tests.filter(t => t.status === 'success').length;
                 const failed = session.tests.filter(t => t.status === 'failed').length;
+                const pending = total - success - failed;
+                const progress = total > 0 ? Math.round((success / total) * 100) : 0;
                 
-                let reportText = `====== REPORTE: ${session.name.toUpperCase()} ======\n`;
-                reportText += `Responsable: ${session.responsible}\n`;
-                reportText += `Fecha: ${this.formatDate(session.createdAt)}\n`;
-                reportText += `-------------------------------------------\n`;
-                reportText += `AVANCE GENERAL: ${total > 0 ? Math.round((success/total)*100) : 0}%\n`;
-                reportText += `Exitosas: ${success} | Fallidas: ${failed} | Pendientes: ${total - success - failed}\n`;
-                reportText += `-------------------------------------------\n`;
-                
-                if(failed > 0) {
-                    reportText += `\n* INCIDENCIAS REGISTRADAS:\n`;
-                    session.incidents.forEach(inc => {
-                        reportText += `- [${inc.status}] ID Prueba ${inc.testId}: ${inc.description}\n`;
-                    });
-                }
+                // Formatear detalle de pruebas (Consolidado tipo WhatsApp)
+                let executedTestsHtml = '';
+                session.tests.filter(t => t.status).forEach(test => {
+                    // Buscar observación (ya sea de nota exitosa o motivo de falla)
+                    let obs = '';
+                    if (test.status === 'success') {
+                        const note = session.evidences.find(e => e.testId === test.id && e.type === 'nota');
+                        obs = note ? note.value : 'Exitoso. Sin observaciones.';
+                    } else {
+                        const incident = session.incidents.find(i => i.testId === test.id);
+                        obs = incident ? incident.description : 'Falla no documentada.';
+                    }
 
-                reportText += `\n* BITÁCORA DE EVENTOS:\n`;
-                [...session.logs].forEach(log => {
-                    reportText += `[${this.formatTime(log.date)}] ${log.description}\n`;
+                    const statusColor = test.status === 'success' ? '#16a34a' : '#dc2626';
+                    const statusText = test.status === 'success' ? 'EXITOSA' : 'FALLIDA';
+
+                    executedTestsHtml += `
+                        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 12px;">
+                            <p style="font-size: 13px; font-weight: bold; margin:0; color: #1e293b;">
+                                <span style="color: ${statusColor};">[${statusText}]</span> 
+                                ID ${test.id} - ${test.activity}
+                            </p>
+                            <p style="font-size: 12px; color: #475569; margin: 4px 0 0 0; line-height: 1.4;">
+                                <b>📝 Observaciones:</b> ${obs}
+                            </p>
+                        </div>
+                    `;
                 });
+
+                // Formatear pagos
+                const amtSent = session.payments.filter(p=>p.type==='Enviado').reduce((acc, c)=>acc+Number(c.amount),0);
+                const amtRec = session.payments.filter(p=>p.type==='Recibido').reduce((acc, c)=>acc+Number(c.amount),0);
 
                 const html = `
                     <div class="fade-in space-y-4 h-full flex flex-col">
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center flex-none">
-                            <h2 class="text-xl font-bold text-slate-800">Reporte Final</h2>
-                            <button onclick="SPEIKITO.copyReport()" class="flex items-center gap-2 bg-primary-50 text-primary-600 hover:bg-primary-100 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-primary-200">
-                                <i data-lucide="copy" class="w-4 h-4"></i> Copiar
-                            </button>
+                            <h2 class="text-xl font-bold text-slate-800">Reporte Ejecutivo</h2>
+                            <div class="flex gap-2">
+                                <button onclick="SPEIKITO.copyReport()" class="flex items-center gap-2 bg-slate-50 text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-slate-200">
+                                    <i data-lucide="copy" class="w-4 h-4"></i> <span class="hidden sm:inline">Copiar</span>
+                                </button>
+                                <button onclick="SPEIKITO.downloadPDF(event)" class="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-1.5 rounded-lg text-sm font-bold transition-colors border border-red-200 shadow-sm">
+                                    <i data-lucide="file-down" class="w-4 h-4"></i> Generar PDF
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="bg-slate-900 rounded-2xl shadow-inner p-4 flex-1 overflow-y-auto relative">
-                            <pre id="report-content" class="text-green-400 font-mono text-[10px] sm:text-xs whitespace-pre-wrap leading-relaxed">${reportText}</pre>
+                        <div class="bg-slate-200 rounded-2xl shadow-inner p-4 md:p-8 flex-1 overflow-y-auto relative flex justify-center">
+                            <!-- HOJA DE REPORTE (Diseño para PDF) -->
+                            <div id="pdf-content" class="bg-white shadow-md w-full max-w-3xl rounded-sm" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; box-sizing: border-box;">
+                                
+                                <!-- Encabezado -->
+                                <div style="border-bottom: 3px solid #0ea5e9; padding-bottom: 15px; margin-bottom: 25px;">
+                                    <h1 style="font-size: 26px; font-weight: 900; margin: 0; color: #0f172a; text-transform: uppercase;">Resumen de Certificación</h1>
+                                    <p style="font-size: 14px; margin: 5px 0 0 0; color: #64748b; font-weight: bold;">SPEIKITO ⚡ AutoCert Workspace</p>
+                                </div>
+
+                                <!-- Info General -->
+                                <table style="width: 100%; font-size: 13px; margin-bottom: 25px; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 6px 0; border-bottom: 1px solid #f1f5f9;"><b>Proyecto / Guion:</b> <span style="color: #334155;">${session.name}</span></td>
+                                        <td style="padding: 6px 0; border-bottom: 1px solid #f1f5f9; text-align: right;"><b>Fecha de Emisión:</b> <span style="color: #334155;">${new Date().toLocaleDateString('es-MX')}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 6px 0; border-bottom: 1px solid #f1f5f9;"><b>Responsable(s):</b> <span style="color: #334155;">${session.responsible}</span></td>
+                                        <td style="padding: 6px 0; border-bottom: 1px solid #f1f5f9; text-align: right;"><b>Avance Global:</b> <span style="color: #0ea5e9; font-weight: bold;">${progress}%</span></td>
+                                    </tr>
+                                </table>
+
+                                <!-- KPIs (Métricas) -->
+                                <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+                                    <div style="flex: 1; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; text-align: center;">
+                                        <p style="margin: 0; font-size: 11px; font-weight: bold; color: #64748b; letter-spacing: 1px;">TOTAL PRUEBAS</p>
+                                        <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: 900; color: #334155;">${total}</p>
+                                    </div>
+                                    <div style="flex: 1; padding: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; text-align: center;">
+                                        <p style="margin: 0; font-size: 11px; font-weight: bold; color: #16a34a; letter-spacing: 1px;">EXITOSAS</p>
+                                        <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: 900; color: #15803d;">${success}</p>
+                                    </div>
+                                    <div style="flex: 1; padding: 15px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; text-align: center;">
+                                        <p style="margin: 0; font-size: 11px; font-weight: bold; color: #dc2626; letter-spacing: 1px;">FALLIDAS</p>
+                                        <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: 900; color: #b91c1c;">${failed}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Detalle de Pruebas (Lo reportado en WhatsApp) -->
+                                <h3 style="font-size: 15px; font-weight: 900; text-transform: uppercase; background-color: #f1f5f9; padding: 8px 12px; margin-bottom: 15px; color: #0f172a; border-left: 4px solid #0ea5e9;">
+                                    Detalle de Ejecución (Observaciones)
+                                </h3>
+                                <div style="margin-bottom: 30px;">
+                                    ${executedTestsHtml || '<p style="font-size: 13px; color: #64748b; font-style: italic;">No hay pruebas ejecutadas aún.</p>'}
+                                </div>
+
+                                <!-- Matriz de Pagos -->
+                                <h3 style="font-size: 15px; font-weight: 900; text-transform: uppercase; background-color: #f1f5f9; padding: 8px 12px; margin-bottom: 15px; color: #0f172a; border-left: 4px solid #f59e0b;">
+                                    Resumen Financiero (Matriz)
+                                </h3>
+                                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;"><b>Monto Total Enviado:</b></td>
+                                        <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; text-align: right; color: #ea580c; font-weight: 900;">$${amtSent.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;"><b>Monto Total Recibido:</b></td>
+                                        <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; text-align: right; color: #2563eb; font-weight: 900;">$${amtRec.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                                    </tr>
+                                </table>
+
+                                <!-- Pie de página -->
+                                <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                    Documento generado automáticamente y almacenado localmente por SPEIKITO AutoCert Workspace. <br>
+                                    Fecha y hora de generación: ${new Date().toLocaleString('es-MX')}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
                 container.innerHTML = html;
+                lucide.createIcons();
             },
             copyReport() {
-                const text = document.getElementById('report-content').innerText;
+                const text = document.getElementById('pdf-content').innerText;
                 
-                // Usamos un textarea temporal invisible para evitar restricciones del iFrame
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
-                
-                // Evitamos que la pantalla haga un salto (scroll) al crear el elemento
                 textArea.style.top = "0";
                 textArea.style.left = "0";
                 textArea.style.position = "fixed";
@@ -1255,6 +1340,37 @@
                 }
                 
                 document.body.removeChild(textArea);
+            },
+            downloadPDF(event) {
+                const element = document.getElementById('pdf-content');
+                const session = this.getSession();
+                
+                // Mostrar estado de carga en el botón
+                const btn = event.currentTarget;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Generando...';
+                lucide.createIcons();
+
+                // Configuración del PDF
+                const opt = {
+                    margin:       0.5,
+                    filename:     `SPEIKITO_Reporte_${session.name.replace(/\s+/g, '_')}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true }, // Mayor escala = mejor calidad de texto
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                // Generar y guardar
+                html2pdf().set(opt).from(element).save().then(() => {
+                    // Restaurar botón original
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }).catch(err => {
+                    console.error("Error al generar PDF:", err);
+                    alert("Hubo un problema al generar el PDF.");
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                });
             },
 
             // --- MODALS (INCIDENTS, EVIDENCES, PAYMENTS) ---
